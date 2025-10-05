@@ -1,0 +1,190 @@
+        ORG 0
+        MOV #65498, R6         ; SP
+
+; Limpa visor
+        MOV #65500, R1
+        MOV #36, R2
+LIMPA_VISOR:
+        CLR (R1)+
+        SOB R2, LIMPA_VISOR
+
+; Configurações iniciais
+        MOV #65500, R5         ; Ponteiro do visor
+
+; Mostra prompt
+        MOV #62, (R5)+         ; '>'
+
+; Lê primeiro número (2 dígitos)
+        CLR NUM1
+        MOV #2, R4             ; 2 dígitos
+LE_NUM1:
+        CLR 65498
+AGUARDA1:
+        TST 65498
+        BEQ AGUARDA1
+        MOV 65499, R0
+        MOV R0, (R5)+          ; Eco no visor
+        SUB #48, R0            ; Converte ASCII para número
+        
+        ; NUM1 = NUM1 * 10 + R0
+        MOV NUM1, R1
+        MOV R1, R2
+        ADD R1, R1             ; *2
+        ADD R1, R1             ; *4
+        ADD R2, R1             ; *5
+        ADD R1, R1             ; *10
+        ADD R0, R1             ; + novo dígito
+        MOV R1, NUM1
+        
+        SOB R4, LE_NUM1
+
+; Lê operador
+        CLR 65498
+AGUARDA_OP:
+        TST 65498
+        BEQ AGUARDA_OP
+        MOV 65499, R0
+        MOV R0, (R5)+
+        MOV R0, OPERADOR
+
+; Lê segundo número (2 dígitos)
+        CLR NUM2
+        MOV #2, R4             ; 2 dígitos
+LE_NUM2:
+        CLR 65498
+AGUARDA2:
+        TST 65498
+        BEQ AGUARDA2
+        MOV 65499, R0
+        MOV R0, (R5)+          ; Eco no visor
+        SUB #48, R0            ; Converte ASCII para número
+        
+        ; NUM2 = NUM2 * 10 + R0
+        MOV NUM2, R1
+        MOV R1, R2
+        ADD R1, R1             ; *2
+        ADD R1, R1             ; *4
+        ADD R2, R1             ; *5
+        ADD R1, R1             ; *10
+        ADD R0, R1             ; + novo dígito
+        MOV R1, NUM2
+        
+        SOB R4, LE_NUM2
+
+; Mostra '='
+        MOV #61, (R5)+         ; '='
+
+; Cálculos
+CALCULAR:
+        MOV NUM1, R0
+        MOV NUM2, R1
+        CMP OPERADOR, #43      ; '+'
+        BEQ SOMA
+        CMP OPERADOR, #45      ; '-'
+        BEQ SUBTRACAO
+        CMP OPERADOR, #42      ; '*'
+        BEQ MULTIPLICACAO
+        CMP OPERADOR, #47      ; '/'
+        BEQ DIVISAO
+        BR ERRO
+
+SOMA:
+        ADD R1, R0             ; R0 = R0 + R1
+        BR MOSTRAR
+
+SUBTRACAO:
+        SUB R1, R0             ; R0 = R0 - R1
+        BR MOSTRAR
+
+; MULTIPLICAÇÃO NO SEU ESTILO
+MULTIPLICACAO:
+        MOV R0, R4             ; R4 = multiplicando
+        MOV R1, R1             ; R1 = multiplicador (contador)
+        CLR R3                 ; R3 = acumulador
+LOOP_MULT:
+        CMP #0, R1
+        BEQ FIM_MULT
+        ADD R4, R3             ; soma multiplicando no acumulador
+        DEC R1
+        BR LOOP_MULT
+FIM_MULT:
+        MOV R3, R0             ; resultado em R0
+        BR MOSTRAR
+
+; DIVISÃO NO SEU ESTILO
+DIVISAO:
+        MOV R0, R3             ; R3 = dividendo
+        MOV R1, R4             ; R4 = divisor
+        CLR R0                 ; R0 = quociente
+LOOP_DIV:
+        CMP R4, R3
+        BHI FIM_DIV
+        SUB R4, R3
+        INC R0
+        BR LOOP_DIV
+FIM_DIV:
+        BR MOSTRAR
+
+ERRO:
+        MOV #69, (R5)+         ; 'E'
+        MOV #82, (R5)+         ; 'R'
+        MOV #82, (R5)+         ; 'R'
+        BR FIM
+
+; Mostra resultado (até 3 dígitos)
+MOSTRAR:
+        MOV R0, RESULTADO
+        MOV #0, R1             ; Centenas
+        MOV #0, R2             ; Dezenas
+        MOV #0, R3             ; Unidades
+
+; Calcula centenas
+CALC_CENTENAS:
+        CMP R0, #100
+        BLT CALC_DEZENAS
+        SUB #100, R0
+        INC R1
+        BR CALC_CENTENAS
+
+; Calcula dezenas
+CALC_DEZENAS:
+        CMP R0, #10
+        BLT CALC_UNIDADES
+        SUB #10, R0
+        INC R2
+        BR CALC_DEZENAS
+
+; Unidades
+CALC_UNIDADES:
+        MOV R0, R3
+
+; Mostra dígitos
+MOSTRA_DIGITOS:
+        CMP R1, #0
+        BEQ MOSTRA_DEZENAS
+        ADD #48, R1
+        MOV R1, (R5)+
+
+MOSTRA_DEZENAS:
+        CMP R1, #0
+        BNE MOSTRA_DEZENA_NORMAL
+        CMP R2, #0
+        BEQ MOSTRA_UNIDADES
+        
+MOSTRA_DEZENA_NORMAL:
+        ADD #48, R2
+        MOV R2, (R5)+
+
+MOSTRA_UNIDADES:
+        ADD #48, R3
+        MOV R3, (R5)+
+
+FIM:
+        HLT
+
+; Dados
+        ORG 200
+NUM1:       DW 0
+NUM2:       DW 0
+OPERADOR:   DW 0
+RESULTADO:  DW 0

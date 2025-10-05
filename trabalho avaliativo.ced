@@ -1,0 +1,40 @@
+        ORG 0
+        MOV #65500, R1       ; ponteiro do visor (primeira posição)
+
+; --- Escreve o nome ---
+        MOV #'B', (R1)+
+        MOV #'E', (R1)+
+        MOV #'A', (R1)+
+        MOV #'T', (R1)+
+        MOV #'R', (R1)+
+        MOV #'I', (R1)+
+        MOV #'Z', (R1)+
+
+; espaço entre nome e RA
+        MOV #' ', (R1)+
+
+; --- Escreve o RA ---
+        MOV #'3', (R1)+
+        MOV #'0', (R1)+
+        MOV #'5', (R1)+
+        MOV #'0', (R1)+
+        MOV #'7', (R1)+
+        MOV #'3', (R1)+
+        MOV #'4', (R1)+
+
+; --- Prompt ---
+        MOV #' ', (R1)+
+        MOV #'>', (R1)+
+
+; --- Agora leitura do teclado ---
+        MOV #65498, R2       ; endereço do status
+        MOV #65499, R3       ; endereço do buffer
+
+ESPERA: CLR (R2)             ; limpa status
+        TST (R2)             ; testa status
+        BEQ ESPERA           ; se 0, espera tecla
+
+        MOV (R3), R4         ; lê caractere digitado
+        MOV R4, (R1)+        ; ecoa no visor
+
+        HLT                  ; fim
